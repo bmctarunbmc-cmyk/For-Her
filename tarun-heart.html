@@ -1,0 +1,629 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>For You 💗</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Dancing+Script:wght@500;700&family=Quicksand:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --blush:#ffe1ec;
+    --blush-deep:#ffc2d9;
+    --rose:#ff6fa0;
+    --rose-deep:#e94d84;
+    --plum:#5a2340;
+    --plum-soft:#8a4467;
+    --cream:#fff6f9;
+    --gold:#ffd27a;
+    --leaf-deep:#5f9457;
+  }
+  *{ margin:0; padding:0; box-sizing:border-box; }
+  html,body{
+    width:100%; height:100%; overflow:hidden;
+    font-family:'Quicksand', sans-serif;
+    background:var(--cream); color:var(--plum);
+  }
+  .stage{ position:relative; width:100vw; height:100vh; }
+
+  /* ---------- floating background ---------- */
+  .float-layer{ position:absolute; inset:0; overflow:hidden; pointer-events:none; z-index:1; }
+  .drift{
+    position:absolute; bottom:-10%; font-size:22px; opacity:0.55;
+    animation:rise linear infinite; color:var(--rose);
+    filter:drop-shadow(0 0 6px rgba(255,111,160,0.25));
+  }
+  @keyframes rise{
+    0%{ transform:translateY(0) translateX(0) rotate(0deg); opacity:0; }
+    10%{ opacity:0.6; } 90%{ opacity:0.5; }
+    100%{ transform:translateY(-115vh) translateX(var(--drift-x,20px)) rotate(360deg); opacity:0; }
+  }
+
+  /* ---------- LOADING SCREEN ---------- */
+  #loadingScreen{
+    position:fixed; inset:0; z-index:100;
+    display:flex; flex-direction:column; align-items:center; justify-content:center;
+    background:linear-gradient(160deg, var(--cream), var(--blush) 80%);
+    transition:opacity 0.6s ease;
+  }
+  #loadingScreen.fade-out{ opacity:0; pointer-events:none; }
+  .loading-label{
+    font-family:'Dancing Script', cursive;
+    font-size:26px; color:var(--plum); margin-bottom:18px;
+  }
+  .loading-bar{
+    width:220px; height:8px; background:#ffffff; border:2px solid #f3c9d8;
+    border-radius:999px; overflow:hidden;
+  }
+  .loading-fill{
+    height:100%; width:0%;
+    background:linear-gradient(135deg, var(--rose), var(--rose-deep));
+    border-radius:999px; transition:width 0.15s ease;
+  }
+  .loading-pct{ margin-top:10px; font-size:13px; color:var(--plum-soft); letter-spacing:1px; }
+
+  /* ---------- PAGE 1 ---------- */
+  #entry-page{
+    position:absolute; inset:0; display:flex; align-items:center; justify-content:center;
+    background:
+      radial-gradient(circle at 20% 20%, var(--blush) 0%, transparent 55%),
+      radial-gradient(circle at 80% 80%, var(--blush-deep) 0%, transparent 55%),
+      linear-gradient(160deg, var(--cream), var(--blush) 70%);
+    z-index:2; transition:opacity 0.6s ease;
+  }
+  .entry-card{ position:relative; z-index:3; text-align:center; padding:40px 32px; max-width:480px; }
+  .eyebrow, .headline, .subtext, .enter-btn{ opacity:0; }
+  #entry-page.started .eyebrow{ animation:fadeUp 0.9s ease forwards 0.2s; }
+  #entry-page.started .headline{ animation:fadeUp 0.9s ease forwards 0.45s; }
+  #entry-page.started .subtext{ animation:fadeUp 0.9s ease forwards 0.7s; }
+  #entry-page.started .enter-btn{ animation:fadeUp 0.9s ease forwards 0.95s, pulse 2.4s ease-in-out infinite 2s; }
+
+  .eyebrow{
+    font-size:13px; letter-spacing:4px; text-transform:uppercase;
+    color:var(--rose-deep); font-weight:600; margin-bottom:18px;
+  }
+  .headline{
+    font-family:'Dancing Script', cursive; font-weight:700;
+    font-size:clamp(42px, 9vw, 74px); line-height:1.05; color:var(--plum); margin-bottom:16px;
+  }
+  .headline span{ color:var(--rose-deep); }
+  .subtext{ font-size:16px; color:var(--plum-soft); line-height:1.6; margin-bottom:34px; }
+  @keyframes fadeUp{ from{ opacity:0; transform:translateY(14px); } to{ opacity:1; transform:translateY(0); } }
+
+  .enter-btn{
+    position:relative; font-family:'Quicksand', sans-serif; font-weight:700; font-size:16px;
+    color:#fff; background:linear-gradient(135deg, var(--rose), var(--rose-deep)); border:none;
+    padding:16px 36px; border-radius:999px; cursor:pointer;
+    box-shadow:0 10px 24px -8px rgba(233,77,132,0.55);
+    transition:transform 0.25s ease, box-shadow 0.25s ease;
+  }
+  .enter-btn:hover{ transform:translateY(-2px) scale(1.03); box-shadow:0 14px 28px -8px rgba(233,77,132,0.65); }
+  .enter-btn:active{ transform:translateY(0) scale(0.97); }
+  .enter-btn:focus-visible{ outline:3px solid var(--gold); outline-offset:3px; }
+  @keyframes pulse{
+    0%,100%{ box-shadow:0 10px 24px -8px rgba(233,77,132,0.55); }
+    50%{ box-shadow:0 10px 30px -4px rgba(233,77,132,0.8); }
+  }
+  .mini-heart{ font-size:14px; margin-left:6px; display:inline-block; }
+
+  /* ---------- TRANSITION 1 : heart ---------- */
+  .transition-overlay{
+    position:fixed; inset:0; z-index:50; display:flex; align-items:center; justify-content:center;
+    pointer-events:none; opacity:0; background:var(--cream); overflow:hidden;
+  }
+  .transition-overlay.active{ pointer-events:all; opacity:1; }
+  .heart-shape{ position:relative; width:26px; height:26px; transform:scale(0) rotate(-45deg); background:var(--rose-deep); }
+  .heart-shape::before, .heart-shape::after{
+    content:""; position:absolute; width:26px; height:26px; background:var(--rose-deep); border-radius:50%;
+  }
+  .heart-shape::before{ top:-13px; left:0; }
+  .heart-shape::after{ top:0; left:13px; }
+  #transition.active .heart-shape{ animation:heartGrow 1.7s cubic-bezier(.62,0,.35,1) forwards; }
+  @keyframes heartGrow{
+    0%{ transform:scale(0) rotate(-45deg); }
+    55%{ transform:scale(18) rotate(-45deg); }
+    100%{ transform:scale(60) rotate(-45deg); }
+  }
+  .transition-words{
+    position:absolute; font-family:'Dancing Script', cursive; font-size:clamp(24px, 5vw, 34px);
+    color:#fff; opacity:0; z-index:2; text-align:center; padding:0 24px;
+  }
+  #transition.active .transition-words{ animation:wordsFade 1.7s ease forwards; }
+  @keyframes wordsFade{
+    0%{ opacity:0; transform:scale(0.9); } 35%{ opacity:0; }
+    55%{ opacity:1; transform:scale(1); } 85%{ opacity:1; } 100%{ opacity:0; }
+  }
+
+  /* ---------- TRANSITION 2 : leaves + birds ---------- */
+  #transition2{ background:linear-gradient(160deg, #fff9f0, #ffe9d6 60%, #ffdcea); }
+  .leaf{ position:absolute; top:-8%; font-size:20px; opacity:0; color:var(--leaf-deep); animation:leafFall linear forwards; }
+  @keyframes leafFall{
+    0%{ transform:translateY(0) translateX(0) rotate(0deg); opacity:0; }
+    8%{ opacity:0.85; }
+    100%{ transform:translateY(115vh) translateX(var(--sway,40px)) rotate(320deg); opacity:0.6; }
+  }
+  .bird{ position:absolute; font-size:26px; top:var(--bird-top, 35%); left:-10%; opacity:0; animation:birdFly 2.6s ease-in-out forwards; }
+  @keyframes birdFly{
+    0%{ left:-10%; opacity:0; transform:translateY(0); }
+    10%{ opacity:1; } 50%{ transform:translateY(-22px); } 90%{ opacity:1; }
+    100%{ left:110%; opacity:0; transform:translateY(4px); }
+  }
+  #transition2 .transition-words{ color:var(--plum); text-shadow:0 2px 10px rgba(255,255,255,0.8); }
+  #transition2.active .transition-words{ animation:wordsFade 2.4s ease forwards; }
+
+  /* ---------- shared page wrapper ---------- */
+  .page{ position:absolute; inset:0; display:none; align-items:center; justify-content:center; z-index:2; overflow-y:auto; }
+  .page.show{ display:flex; }
+  .page-card{
+    text-align:center; max-width:540px; width:100%; padding:40px 32px;
+    opacity:0; transform:translateY(10px); animation:fadeUp 0.8s ease forwards; margin:auto;
+  }
+  .page-eyebrow{
+    font-size:13px; letter-spacing:4px; text-transform:uppercase;
+    color:var(--rose-deep); font-weight:600; margin-bottom:16px;
+  }
+  .page-headline{
+    font-family:'Dancing Script', cursive; font-weight:700; font-size:clamp(34px, 7.5vw, 56px);
+    color:var(--plum); margin-bottom:16px; line-height:1.1;
+  }
+  .page-body{ font-size:16px; color:var(--plum-soft); line-height:1.7; margin-bottom:8px; }
+
+  /* ---------- PAGE 2 : chat + accept/reject ---------- */
+  #choice-page{
+    background:
+      radial-gradient(circle at 30% 20%, #ffd7e6 0%, transparent 50%),
+      radial-gradient(circle at 75% 75%, #ffc9e0 0%, transparent 55%),
+      linear-gradient(160deg, var(--cream), var(--blush) 80%);
+  }
+  .chat-thread{
+    display:flex; flex-direction:column; gap:10px; align-items:flex-start;
+    max-width:420px; margin:0 auto 8px; text-align:left;
+  }
+  .chat-bubble{
+    background:#fff; border:2px solid #f3c9d8; padding:12px 16px;
+    border-radius:18px 18px 18px 4px; font-size:15px; color:var(--plum); line-height:1.5;
+    opacity:0; transform:translateY(6px); animation:bubbleIn 0.35s ease forwards;
+    box-shadow:0 4px 14px -6px rgba(233,77,132,0.25);
+  }
+  @keyframes bubbleIn{ to{ opacity:1; transform:translateY(0); } }
+  .typing-indicator{
+    display:none; gap:4px; padding:14px 18px; background:#fff; border:2px solid #f3c9d8;
+    border-radius:18px 18px 18px 4px; width:fit-content;
+  }
+  .typing-indicator span{ width:7px; height:7px; border-radius:50%; background:var(--rose-deep); animation:typingBounce 1.2s infinite ease-in-out; }
+  .typing-indicator span:nth-child(2){ animation-delay:0.15s; }
+  .typing-indicator span:nth-child(3){ animation-delay:0.3s; }
+  @keyframes typingBounce{ 0%,60%,100%{ transform:translateY(0); opacity:0.5; } 30%{ transform:translateY(-5px); opacity:1; } }
+
+  #choiceButtons{ opacity:0; transition:opacity 0.5s ease; margin-top:14px; }
+  #choiceButtons.ready{ opacity:1; }
+
+  .dodge-zone{ position:relative; width:100%; height:170px; margin-top:10px; }
+  .accept-btn{
+    position:absolute; left:50%; top:14px; transform:translateX(calc(-100% - 10px));
+    font-family:'Quicksand', sans-serif; font-weight:700; font-size:16px; color:#fff;
+    background:linear-gradient(135deg, var(--rose), var(--rose-deep)); border:none;
+    padding:16px 30px; border-radius:999px; cursor:pointer;
+    box-shadow:0 10px 24px -8px rgba(233,77,132,0.55);
+    transition:transform 0.25s ease, box-shadow 0.25s ease; z-index:3;
+  }
+  .accept-btn:hover{ transform:translateX(calc(-100% - 10px)) translateY(-2px) scale(1.03); }
+  .accept-btn:focus-visible{ outline:3px solid var(--gold); outline-offset:3px; }
+  .reject-btn{
+    position:absolute; left:50%; top:14px; transform:translateX(10px);
+    font-family:'Quicksand', sans-serif; font-weight:600; font-size:15px; color:var(--plum-soft);
+    background:#fff; border:2px solid #f3c9d8; padding:15px 26px; border-radius:999px; cursor:pointer;
+    transition:top 0.18s ease, left 0.18s ease; z-index:3; user-select:none;
+  }
+  .dodge-hint{ margin-top:14px; font-size:13px; color:var(--plum-soft); opacity:0.75; font-style:italic; }
+
+  /* ---------- PAGE 3 : coffee ---------- */
+  #coffee-page{
+    background:
+      radial-gradient(circle at 25% 25%, #ffe6cf 0%, transparent 50%),
+      radial-gradient(circle at 80% 70%, #ffd7e6 0%, transparent 55%),
+      linear-gradient(160deg, var(--cream), var(--blush) 80%);
+  }
+  .coffee-options{ display:flex; flex-wrap:wrap; gap:12px; justify-content:center; margin-top:26px; }
+  .coffee-btn{
+    font-family:'Quicksand', sans-serif; font-weight:600; font-size:15px; color:var(--plum);
+    background:#fff; border:2px solid #f3c9d8; padding:13px 22px; border-radius:999px;
+    cursor:pointer; transition:all 0.2s ease;
+  }
+  .coffee-btn:hover{
+    background:linear-gradient(135deg, var(--rose), var(--rose-deep)); color:#fff;
+    border-color:transparent; transform:translateY(-2px);
+  }
+  .coffee-btn:focus-visible{ outline:3px solid var(--gold); outline-offset:3px; }
+  .coffee-confirm{
+    display:none; font-family:'Dancing Script', cursive; font-size:clamp(24px,5.2vw,32px);
+    color:var(--rose-deep); margin-top:22px;
+  }
+  .coffee-confirm.show{ display:block; }
+
+  /* ---------- PAGE 4 : message tarun ---------- */
+  #message-page{
+    background:
+      radial-gradient(circle at 20% 25%, #ffe9d6 0%, transparent 50%),
+      radial-gradient(circle at 80% 75%, #ffd2e4 0%, transparent 55%),
+      linear-gradient(160deg, var(--cream), var(--blush) 80%);
+  }
+  .poem{
+    font-family:'Dancing Script', cursive; font-size:clamp(19px, 4vw, 24px); color:var(--plum);
+    line-height:1.75; margin:22px 0 10px; white-space:pre-line;
+  }
+  .ps-line{ font-size:14px; color:var(--plum-soft); font-style:italic; margin-bottom:22px; }
+  .whatsapp-options{ display:flex; flex-direction:column; gap:12px; align-items:center; margin-top:10px; }
+  .wa-btn{
+    display:inline-block; text-decoration:none; font-family:'Quicksand', sans-serif; font-weight:700;
+    font-size:15px; color:#fff; background:linear-gradient(135deg, #34c17a, #22a866);
+    padding:14px 28px; border-radius:999px; box-shadow:0 10px 22px -8px rgba(34,168,102,0.55);
+    transition:transform 0.2s ease, box-shadow 0.2s ease; width:min(320px, 90%);
+  }
+  .wa-btn:hover{ transform:translateY(-2px); box-shadow:0 14px 26px -8px rgba(34,168,102,0.65); }
+  .wa-btn:focus-visible{ outline:3px solid var(--gold); outline-offset:3px; }
+  .wa-btn.secondary{ background:#fff; color:var(--plum); border:2px solid #f3c9d8; box-shadow:none; }
+  .wa-hint{ margin-top:16px; font-size:13px; color:var(--plum-soft); opacity:0.8; font-style:italic; }
+  .number-note{ font-size:13px; color:var(--plum-soft); margin-top:14px; }
+
+  @media (prefers-reduced-motion: reduce){
+    .drift, .leaf, .bird{ animation:none !important; opacity:0.5 !important; }
+    .headline, .eyebrow, .subtext, .enter-btn, .page-card, .chat-bubble{ animation:none !important; opacity:1 !important; transform:none !important; }
+    #choiceButtons{ opacity:1 !important; }
+    .heart-shape{ transition:none; }
+    #transition.active .heart-shape{ animation:none; transform:scale(60) rotate(-45deg); }
+    .transition-words{ animation:none !important; opacity:1 !important; }
+  }
+
+  @media (max-width:480px){
+    .accept-btn{ transform:translateX(calc(-100% - 6px)); padding:14px 20px; font-size:14px; }
+    .accept-btn:hover{ transform:translateX(calc(-100% - 6px)) translateY(-2px); }
+    .reject-btn{ transform:translateX(6px); padding:13px 18px; font-size:13px; }
+    .dodge-zone{ height:200px; }
+  }
+</style>
+</head>
+<body>
+
+<div id="loadingScreen">
+  <p class="loading-label">gathering courage…</p>
+  <div class="loading-bar"><div class="loading-fill" id="loadingFill"></div></div>
+  <p class="loading-pct" id="loadingPct">0%</p>
+</div>
+
+<div class="stage">
+
+  <!-- PAGE 1 -->
+  <section id="entry-page">
+    <div class="float-layer" id="float1"></div>
+    <div class="entry-card">
+      <p class="eyebrow">this isn't a normal text</p>
+      <h1 class="headline">okay, so...<br><span>hi</span> 👀</h1>
+      <p class="subtext">I couldn't just text "hey" — felt too small for what I wanted to say.<br>So I made you this instead. No big deal.<br>(it's a big deal.)</p>
+      <button class="enter-btn" id="enterBtn">Enter Tarun's Heart <span class="mini-heart">💗</span></button>
+    </div>
+  </section>
+
+  <!-- TRANSITION 1 : heart -->
+  <div id="transition" class="transition-overlay">
+    <div class="heart-shape"></div>
+    <div class="transition-words">walking into my heart…</div>
+  </div>
+
+  <!-- TRANSITION 2 : leaves + birds -->
+  <div id="transition2" class="transition-overlay">
+    <div id="leafLayer"></div>
+    <div id="birdLayer"></div>
+    <div class="transition-words">carried by the wind, straight to you…</div>
+  </div>
+
+  <!-- PAGE 2 : chat + accept/reject -->
+  <section class="page" id="choice-page">
+    <div class="float-layer" id="float2"></div>
+    <div class="page-card">
+      <div class="chat-thread" id="chatThread">
+        <div class="typing-indicator" id="typingIndicator"><span></span><span></span><span></span></div>
+      </div>
+
+      <div class="dodge-zone" id="dodgeZone" style="display:none;">
+        <div id="choiceButtons" style="position:absolute; inset:0;">
+          <button class="accept-btn" id="acceptBtn">Yes, I accept 💖</button>
+          <button class="reject-btn" id="rejectBtn">Reject</button>
+        </div>
+      </div>
+      <p class="dodge-hint" id="dodgeHint" style="display:none;">psst, good luck clicking that other one</p>
+    </div>
+  </section>
+
+  <!-- PAGE 3 : coffee -->
+  <section class="page" id="coffee-page">
+    <div class="float-layer" id="float3"></div>
+    <div class="page-card">
+      <p class="page-eyebrow">step two</p>
+      <h1 class="page-headline">so... when are you free? ☕</h1>
+      <p class="page-body">no pressure, but I already checked the weather for all four of these.</p>
+
+      <div class="coffee-options" id="coffeeOptions">
+        <button class="coffee-btn">Today</button>
+        <button class="coffee-btn">Tomorrow</button>
+        <button class="coffee-btn">This weekend</button>
+        <button class="coffee-btn">Surprise me</button>
+      </div>
+
+      <p class="coffee-confirm" id="coffeeConfirm"></p>
+    </div>
+  </section>
+
+  <!-- PAGE 4 : message tarun -->
+  <section class="page" id="message-page">
+    <div class="float-layer" id="float4"></div>
+    <div class="page-card">
+      <p class="page-eyebrow">last step, for now</p>
+      <h1 class="page-headline">come say hi 🕊️</h1>
+
+      <p class="poem">A leaf doesn't ask the wind where to land,
+it just trusts the air and opens its hand.
+Two birds crossed the sky, no map, no plan,
+and somehow still ended up exactly where they began.
+So here's my heart, laid out, plain and true —
+one message away, and it's waiting on you.</p>
+      <p class="ps-line">P.S. — I will absolutely refresh WhatsApp like it's a stock chart.</p>
+
+      <div class="whatsapp-options" id="waOptions">
+        <a class="wa-btn" href="#" data-msg="Hi Tarun, I finally made it to the end of your website... and yes, my heart did skip a beat. 🥹💗" target="_blank" rel="noopener">Say something sweet 💌</a>
+        <a class="wa-btn secondary" href="#" data-msg="Congratulations, you've officially out-effort every guy who just texts 'hey'. Casanova. Text me back. 😂" target="_blank" rel="noopener">Keep it funny 😂</a>
+        <a class="wa-btn secondary" href="#" data-msg="Heyy, made it through your whole heart-website. Impressive. So... now what? 👀" target="_blank" rel="noopener">Just say hi 👋</a>
+      </div>
+
+      <p class="wa-hint">pick your vibe, I'll be waiting either way</p>
+      <p class="number-note">or save the number yourself, no pressure: +977 980 747 4731 (I'm already nervous)</p>
+    </div>
+  </section>
+
+</div>
+
+<script>
+  function scatter(layerId, count){
+    const layer = document.getElementById(layerId);
+    if(!layer) return;
+    const glyphs = ['💗','💕','✨','🌸','💖'];
+    for(let i=0;i<count;i++){
+      const el = document.createElement('span');
+      el.className = 'drift';
+      el.textContent = glyphs[Math.floor(Math.random()*glyphs.length)];
+      el.style.left = Math.random()*100 + '%';
+      el.style.fontSize = (14 + Math.random()*18) + 'px';
+      el.style.setProperty('--drift-x', (Math.random()*80-40) + 'px');
+      const duration = 7 + Math.random()*8;
+      el.style.animationDuration = duration + 's';
+      el.style.animationDelay = (Math.random()*duration) + 's';
+      layer.appendChild(el);
+    }
+  }
+  scatter('float1', 16); scatter('float2', 12); scatter('float3', 12); scatter('float4', 12);
+
+  const entryPage   = document.getElementById('entry-page');
+  const enterBtn    = document.getElementById('enterBtn');
+  const choicePage  = document.getElementById('choice-page');
+  const coffeePage  = document.getElementById('coffee-page');
+  const messagePage = document.getElementById('message-page');
+  const transition  = document.getElementById('transition');
+  const transition2 = document.getElementById('transition2');
+
+  // ---------- loading screen ----------
+  const loadingScreen = document.getElementById('loadingScreen');
+  const loadingFill = document.getElementById('loadingFill');
+  const loadingPct = document.getElementById('loadingPct');
+  let pct = 0;
+  const loadTimer = setInterval(() => {
+    pct += Math.random()*18 + 6;
+    if(pct >= 100){
+      pct = 100;
+      clearInterval(loadTimer);
+      loadingFill.style.width = '100%';
+      loadingPct.textContent = '100%';
+      setTimeout(() => {
+        loadingScreen.classList.add('fade-out');
+        entryPage.classList.add('started');
+        setTimeout(() => { loadingScreen.style.display = 'none'; }, 650);
+      }, 300);
+      return;
+    }
+    loadingFill.style.width = pct + '%';
+    loadingPct.textContent = Math.floor(pct) + '%';
+  }, 180);
+
+  enterBtn.addEventListener('click', () => {
+    entryPage.style.opacity = '0';
+    transition.classList.add('active');
+    setTimeout(() => {
+      entryPage.style.display = 'none';
+      choicePage.classList.add('show');
+      document.getElementById('dodgeZone').style.display = 'block';
+      document.getElementById('dodgeHint').style.display = 'block';
+      runChat();
+    }, 900);
+    setTimeout(() => { transition.classList.remove('active'); }, 1750);
+  });
+
+  // ---------- chat thread ----------
+  const chatMessages = [
+    "okay full disclosure...",
+    "it's me. Tarun 👋",
+    "I built you an entire website instead of just texting you. that should probably tell you something already.",
+    "so... official business. what's it gonna be? 😏"
+  ];
+  function runChat(){
+    const thread = document.getElementById('chatThread');
+    const indicator = document.getElementById('typingIndicator');
+    let i = 0;
+    function next(){
+      if(i >= chatMessages.length){
+        indicator.style.display = 'none';
+        document.getElementById('choiceButtons').classList.add('ready');
+        document.getElementById('choiceButtons').style.opacity = '1';
+        return;
+      }
+      indicator.style.display = 'flex';
+      setTimeout(() => {
+        indicator.style.display = 'none';
+        const b = document.createElement('div');
+        b.className = 'chat-bubble';
+        b.textContent = chatMessages[i];
+        thread.insertBefore(b, indicator);
+        i++;
+        setTimeout(next, 450);
+      }, 700);
+    }
+    next();
+  }
+
+  // ---------- reject button dodges ----------
+  const dodgeZone = document.getElementById('dodgeZone');
+  const rejectBtn = document.getElementById('rejectBtn');
+  const acceptBtn = document.getElementById('acceptBtn');
+  const dodgeHint = document.getElementById('dodgeHint');
+  const taunts = ["Reject", "nope", "try again", "nice try", "not today", "missed me", "so close", "almost!", "keep trying"];
+  let dodgeCount = 0;
+  let usingAbsolute = false;
+
+  function activateAbsoluteMode(){
+    if(usingAbsolute) return;
+    usingAbsolute = true;
+    const zoneRect = dodgeZone.getBoundingClientRect();
+    const btnRect = rejectBtn.getBoundingClientRect();
+    rejectBtn.style.transform = 'none';
+    rejectBtn.style.left = (btnRect.left - zoneRect.left) + 'px';
+    rejectBtn.style.top = (btnRect.top - zoneRect.top) + 'px';
+  }
+  function dodge(){
+    if(!document.getElementById('choiceButtons').classList.contains('ready')) return;
+    activateAbsoluteMode();
+    const zoneRect = dodgeZone.getBoundingClientRect();
+    const btnW = rejectBtn.offsetWidth, btnH = rejectBtn.offsetHeight;
+    const maxLeft = Math.max(zoneRect.width - btnW, 0);
+    const maxTop  = Math.max(zoneRect.height - btnH, 0);
+    rejectBtn.style.left = (Math.random()*maxLeft) + 'px';
+    rejectBtn.style.top  = (Math.random()*maxTop) + 'px';
+    dodgeCount++;
+    rejectBtn.textContent = taunts[Math.min(dodgeCount, taunts.length - 1)];
+    const hints = [
+      "psst, good luck clicking that other one",
+      "it's not going to happen",
+      "you're just making it tired",
+      "okay this is actually impressive effort",
+      "at this point just pick the other button 💗"
+    ];
+    dodgeHint.textContent = hints[Math.min(Math.floor(dodgeCount/2), hints.length - 1)];
+  }
+  rejectBtn.addEventListener('mouseenter', dodge);
+  dodgeZone.addEventListener('mousemove', (e) => {
+    const r = rejectBtn.getBoundingClientRect();
+    const dist = Math.hypot(e.clientX-(r.left+r.width/2), e.clientY-(r.top+r.height/2));
+    if(dist < 55){ dodge(); }
+  });
+  dodgeZone.addEventListener('touchstart', (e) => {
+    const t = e.touches[0];
+    const r = rejectBtn.getBoundingClientRect();
+    const dist = Math.hypot(t.clientX-(r.left+r.width/2), t.clientY-(r.top+r.height/2));
+    if(dist < 70){ dodge(); }
+  }, {passive:true});
+  dodgeZone.addEventListener('touchmove', (e) => {
+    const t = e.touches[0];
+    const r = rejectBtn.getBoundingClientRect();
+    const dist = Math.hypot(t.clientX-(r.left+r.width/2), t.clientY-(r.top+r.height/2));
+    if(dist < 70){ dodge(); }
+  }, {passive:true});
+  rejectBtn.addEventListener('click', dodge);
+
+  // ---------- heart burst ----------
+  function burstHearts(originEl){
+    const rect = originEl.getBoundingClientRect();
+    const layer = document.createElement('div');
+    layer.style.cssText = 'position:fixed; left:0; top:0; width:100vw; height:100vh; pointer-events:none; z-index:60;';
+    document.body.appendChild(layer);
+    const cx = rect.left + rect.width/2, cy = rect.top + rect.height/2;
+    const glyphs = ['💗','💕','✨'];
+    for(let i=0;i<22;i++){
+      const s = document.createElement('span');
+      s.textContent = glyphs[Math.floor(Math.random()*glyphs.length)];
+      s.style.cssText = `position:absolute; left:${cx}px; top:${cy}px; font-size:${14+Math.random()*14}px; opacity:1; transition:transform 0.9s cubic-bezier(.2,.7,.3,1), opacity 0.9s ease;`;
+      layer.appendChild(s);
+      const angle = Math.random()*2*Math.PI, dist = 80+Math.random()*160;
+      requestAnimationFrame(() => {
+        s.style.transform = `translate(${Math.cos(angle)*dist}px, ${Math.sin(angle)*dist}px)`;
+        s.style.opacity = '0';
+      });
+    }
+    setTimeout(() => layer.remove(), 950);
+  }
+
+  // ---------- accept -> coffee page ----------
+  acceptBtn.addEventListener('click', () => {
+    burstHearts(acceptBtn);
+    setTimeout(() => {
+      choicePage.classList.remove('show');
+      coffeePage.classList.add('show');
+    }, 500);
+  });
+
+  // ---------- leaf + bird transition ----------
+  function spawnLeafBirdTransition(){
+    const leafLayer = document.getElementById('leafLayer');
+    const birdLayer = document.getElementById('birdLayer');
+    leafLayer.innerHTML = ''; birdLayer.innerHTML = '';
+    const leafGlyphs = ['🍃','🍂','🌿'];
+    for(let i=0;i<26;i++){
+      const el = document.createElement('span');
+      el.className = 'leaf';
+      el.textContent = leafGlyphs[Math.floor(Math.random()*leafGlyphs.length)];
+      el.style.left = Math.random()*100 + '%';
+      el.style.fontSize = (16 + Math.random()*16) + 'px';
+      el.style.setProperty('--sway', (Math.random()*140-70) + 'px');
+      el.style.animationDuration = (2 + Math.random()*1.6) + 's';
+      el.style.animationDelay = (Math.random()*1.2) + 's';
+      leafLayer.appendChild(el);
+    }
+    for(let i=0;i<2;i++){
+      const el = document.createElement('span');
+      el.className = 'bird';
+      el.textContent = '🕊️';
+      el.style.setProperty('--bird-top', (28 + i*22 + Math.random()*10) + '%');
+      el.style.animationDelay = (i*0.4) + 's';
+      birdLayer.appendChild(el);
+    }
+  }
+
+  // ---------- coffee options -> transition -> message page ----------
+  const coffeeConfirm = document.getElementById('coffeeConfirm');
+  document.getElementById('coffeeOptions').addEventListener('click', (e) => {
+    if(!e.target.classList.contains('coffee-btn')) return;
+    const choice = e.target.textContent;
+    coffeeConfirm.textContent = "look at that — we have plans. " + choice.toLowerCase() + " it is 💕";
+    coffeeConfirm.classList.add('show');
+    setTimeout(() => {
+      spawnLeafBirdTransition();
+      coffeePage.style.opacity = '0';
+      transition2.classList.add('active');
+      setTimeout(() => {
+        coffeePage.classList.remove('show');
+        coffeePage.style.opacity = '1';
+        messagePage.classList.add('show');
+      }, 1300);
+      setTimeout(() => { transition2.classList.remove('active'); }, 2500);
+    }, 1300);
+  });
+
+  // ---------- WhatsApp buttons ----------
+  const phoneNumber = '9779807474731';
+  document.querySelectorAll('#waOptions .wa-btn').forEach(btn => {
+    btn.addEventListener('click', (e) => {
+      e.preventDefault();
+      const msg = btn.getAttribute('data-msg');
+      window.open('https://wa.me/' + phoneNumber + '?text=' + encodeURIComponent(msg), '_blank', 'noopener');
+    });
+  });
+</script>
+
+</body>
+</html>
